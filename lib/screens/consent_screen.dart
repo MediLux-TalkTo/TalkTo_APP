@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'home_screen.dart';
+
 class ConsentScreen extends StatefulWidget {
   const ConsentScreen({super.key});
 
@@ -141,7 +143,16 @@ class _ConsentScreenState extends State<ConsentScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: canContinue ? () {} : null,
+                  onPressed: canContinue
+                      ? () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HomeScreen(),
+                            ),
+                          );
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF20D080),
                     disabledBackgroundColor: const Color(0xFFD9D9D9),
