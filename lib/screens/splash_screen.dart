@@ -17,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
 
       Navigator.pushReplacement(
@@ -30,9 +30,32 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
-          child: SvgPicture.asset('assets/images/talkto_logo.svg', width: 190),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset('assets/images/talkto_logo.svg', width: 190),
+
+              const SizedBox(height: 24),
+
+              const Text(
+                '일상의 통화를\n우리 가족만의 하나의 이야기로',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF7C8273),
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w400,
+                  height: 28 / 16.5,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              SvgPicture.asset('assets/images/soundwave_logo.svg', width: 150),
+            ],
+          ),
         ),
       ),
     );

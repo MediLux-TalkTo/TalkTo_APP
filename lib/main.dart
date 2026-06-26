@@ -15,7 +15,7 @@ class TalkToApp extends StatelessWidget {
       title: 'TalkTo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'Pretendard',
+        fontFamily: 'Pretendard Variable',
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
