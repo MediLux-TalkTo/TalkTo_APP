@@ -61,6 +61,11 @@ flutter:
 
   assets:
     - assets/images/talkto_logo.svg
+    - assets/images/soundwave_logo.svg
+
+    - assets/icons/stack_icon.svg
+    - assets/icons/twinkle_icon.svg
+    - assets/icons/upload_icon.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'profile_setup_screen.dart';
 
@@ -10,48 +11,46 @@ class OnboardingIntroScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 80, 32, 28),
+          padding: const EdgeInsets.fromLTRB(26, 28.9, 26, 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(
-                child: _StepIndicator(currentIndex: 0),
-              ),
-              const SizedBox(height: 52),
+              const Center(child: _StepIndicator(currentIndex: 0)),
+              const SizedBox(height: 29),
               const Text(
                 '일상의 통화를\n오래도록 곁에 두세요',
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 24,
                   height: 1.3,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF222222),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               const Text(
                 'TalkTo는 부모님과의 통화를 기록으로 남기고, 그 목소리를\n닮은 AI와 이야기 나눌 수 있게 도와드려요.',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.5,
                   height: 1.7,
                   color: Color(0xFF8A8A8A),
                 ),
               ),
-              const SizedBox(height: 76),
+              const SizedBox(height: 70),
               const _FeatureItem(
-                icon: Icons.upload_rounded,
+                assetPath: 'assets/icons/upload_icon.svg',
                 title: '통화 녹음을 올려요',
                 description: '부모님과의 통화를 그대로 담기만 하면 돼요.',
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 22),
               const _FeatureItem(
-                icon: Icons.inventory_2_outlined,
+                assetPath: 'assets/icons/stack_icon.svg',
                 title: '목소리가 차곡차곡 쌓여요',
                 description: '흩어진 통화가 한 분 한 분의 보관함이 돼요.',
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 22),
               const _FeatureItem(
-                icon: Icons.auto_awesome,
-                title: '목소리한 사람이 돼요',
+                assetPath: 'assets/icons/twinkle_icon.svg',
+                title: '목소리가 한 사람이 돼요',
                 description: '쌓인 통화로 그분의 말투를 닮은 AI와 대화할 수 있어요.',
               ),
               const Spacer(),
@@ -78,7 +77,7 @@ class OnboardingIntroScreen extends StatelessWidget {
                   child: const Text(
                     '다음',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -95,9 +94,7 @@ class OnboardingIntroScreen extends StatelessWidget {
 class _StepIndicator extends StatelessWidget {
   final int currentIndex;
 
-  const _StepIndicator({
-    required this.currentIndex,
-  });
+  const _StepIndicator({required this.currentIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -121,12 +118,12 @@ class _StepIndicator extends StatelessWidget {
 }
 
 class _FeatureItem extends StatelessWidget {
-  final IconData icon;
+  final String assetPath;
   final String title;
   final String description;
 
   const _FeatureItem({
-    required this.icon,
+    required this.assetPath,
     required this.title,
     required this.description,
   });
@@ -134,43 +131,51 @@ class _FeatureItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: const Color(0xFFE4FAF0),
-            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFEAF8F1),
+            borderRadius: BorderRadius.circular(18),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF009F65),
-            size: 22,
+          child: Center(
+            child: SvgPicture.asset(assetPath, width: 21, height: 21),
           ),
         ),
+
         const SizedBox(width: 18),
+
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF222222),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF222222),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: Color(0xFF888888),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: Color(0xFF7C8273),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
