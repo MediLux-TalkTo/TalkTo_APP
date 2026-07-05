@@ -134,8 +134,8 @@ class _FeatureItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
             color: const Color(0xFFEAF8F1),
             borderRadius: BorderRadius.circular(18),
@@ -158,7 +158,7 @@ class _FeatureItem extends StatelessWidget {
                   style: const TextStyle(
                     color: Color(0xFF222222),
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     height: 1.3,
                   ),
                 ),
@@ -171,7 +171,7 @@ class _FeatureItem extends StatelessWidget {
                     color: Color(0xFF7C8273),
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    height: 1.5,
+                    height: 1.2,
                   ),
                 ),
               ],

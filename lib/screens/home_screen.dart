@@ -312,8 +312,8 @@ class _CircularProgressBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 62,
-      height: 62,
+      width: 64,
+      height: 64,
       child: Stack(
         alignment: Alignment.center,
         children: [

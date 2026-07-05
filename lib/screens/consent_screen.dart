@@ -266,13 +266,13 @@ class _ConsentItem extends StatelessWidget {
             _CheckBox(checked: checked),
             const SizedBox(width: 15),
             Container(
-              width: 26,
-              height: 26,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: const Color(0xFFEAF8F1),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 22, color: const Color(0xFF009F65)),
+              child: Icon(icon, size: 18, color: const Color(0xFF009F65)),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -284,7 +284,7 @@ class _ConsentItem extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: title.contains('[필수]')
                           ? const Color(0xFF009F65)
                           : const Color(0xFF555555),
