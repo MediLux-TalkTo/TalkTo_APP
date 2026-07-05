@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'archive_screen.dart';
+import '../archive/archive_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

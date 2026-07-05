@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import './data/subject_api.dart';
 import 'consent_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -12,6 +13,9 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ProfileData> _profiles = [];
+  final SubjectApi _subjectApi = SubjectApi();
+
+  bool _isSubmitting = false;
 
   bool get _canContinue => _profiles.isNotEmpty;
 
@@ -29,6 +33,55 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _profiles.add(ProfileData(name: value));
       _controller.clear();
     });
+  }
+
+  String _toRelationship(String name) {
+    if (name.contains('어머니')) return 'mother';
+    if (name.contains('아버지')) return 'father';
+    if (name.contains('할머니')) return 'grandmother';
+    if (name.contains('할아버지')) return 'grandfather';
+    return 'family';
+  }
+
+  Future<void> _submitSubjects() async {
+    if (_profiles.isEmpty || _isSubmitting) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      for (final profile in _profiles) {
+        await _subjectApi.createSubject(
+          displayName: profile.name,
+          relationship: _toRelationship(profile.name),
+          lifeStatus: _toLifeStatus(profile.status),
+        );
+      }
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ConsentScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('프로필 저장에 실패했습니다. $e')));
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
+  }
+
+  String _toLifeStatus(ProfileStatus status) {
+    return status == ProfileStatus.alive ? 'LIVING' : 'DECEASED';
   }
 
   void _removeProfile(ProfileData profile) {
@@ -220,15 +273,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _canContinue
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ConsentScreen(),
-                            ),
-                          );
-                        }
+                  onPressed: _canContinue && !_isSubmitting
+                      ? _submitSubjects
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF20D080),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home_screen.dart';
+import '../home/home_screen.dart';
 
 class ConsentScreen extends StatefulWidget {
   const ConsentScreen({super.key});
