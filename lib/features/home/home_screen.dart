@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../archive/archive_screen.dart';
+import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../onboarding/profile_setup_screen.dart';
+import '../question/question_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final List<ProfileData> profiles;
+
+  const HomeScreen({super.key, required this.profiles});
 
   static const Color primary = Color(0xFF22CC7A);
   static const Color subText = Color(0xFF7C8273);
   static const Color darkText = Color(0xFF222222);
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedProfileIndex = 0;
+
+  ProfileData get selectedProfile => widget.profiles[_selectedProfileIndex];
+
+  @override
   Widget build(BuildContext context) {
+    final selectedName = selectedProfile.name;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FFF5),
       body: SafeArea(
@@ -39,28 +54,42 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         _TopHeader(),
                         const SizedBox(height: 24),
-                        const Text(
-                          '어머니의 어떤 이야기를\n들어볼까요?',
-                          style: TextStyle(
+                        Text(
+                          '$selectedName 의 어떤 이야기를\n들어볼까요?',
+                          style: const TextStyle(
                             fontSize: 22,
                             height: 1.35,
                             fontWeight: FontWeight.w700,
-                            color: darkText,
+                            color: HomeScreen.darkText,
                           ),
                         ),
                         const SizedBox(height: 22),
-                        const _ProfileSelector(),
+                        _ProfileSelector(
+                          profiles: widget.profiles,
+                          selectedIndex: _selectedProfileIndex,
+                          onSelected: (index) {
+                            setState(() {
+                              _selectedProfileIndex = index;
+                            });
+                          },
+                        ),
                         const SizedBox(height: 18),
-                        const _VoiceProgressCard(),
+                        _VoiceProgressCard(
+                          name: selectedName,
+                          recordingCount: 5,
+                        ),
                         const SizedBox(height: 14),
-                        const _UploadButton(),
+                        _UploadButton(name: selectedName),
                         const SizedBox(height: 18),
-                        const _QuestionCard(),
+                        _QuestionCard(name: selectedName),
                       ],
                     ),
                   ),
                 ),
-                const _BottomNavBar(),
+                BottomNavBar(
+                  currentTab: BottomNavTab.home,
+                  profiles: widget.profiles,
+                ),
               ],
             ),
           ],
@@ -97,29 +126,46 @@ class _TopHeader extends StatelessWidget {
 }
 
 class _ProfileSelector extends StatelessWidget {
-  const _ProfileSelector();
+  final List<ProfileData> profiles;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  const _ProfileSelector({
+    required this.profiles,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
-        _ProfileAvatar(
-          name: '어머니',
-          selected: true,
-          imageUrl:
-              'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200',
-        ),
-        SizedBox(width: 18),
-        _ProfileAvatar(
-          name: '아버지',
-          selected: false,
-          imageUrl:
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
-        ),
-        SizedBox(width: 18),
-        _AddProfileButton(),
+      children: [
+        ...List.generate(profiles.length, (index) {
+          final profile = profiles[index];
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 18),
+            child: GestureDetector(
+              onTap: () => onSelected(index),
+              child: _ProfileAvatar(
+                name: profile.name,
+                selected: selectedIndex == index,
+                imageUrl: _profileImageUrl(profile.name),
+              ),
+            ),
+          );
+        }),
+        const _AddProfileButton(),
       ],
     );
+  }
+
+  String _profileImageUrl(String name) {
+    if (name.contains('아버지') || name.contains('할아버지')) {
+      return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200';
+    }
+
+    return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200';
   }
 }
 
@@ -200,7 +246,10 @@ class _AddProfileButton extends StatelessWidget {
 }
 
 class _VoiceProgressCard extends StatelessWidget {
-  const _VoiceProgressCard();
+  final String name;
+  final int recordingCount;
+
+  const _VoiceProgressCard({required this.name, required this.recordingCount});
 
   @override
   Widget build(BuildContext context) {
@@ -221,81 +270,122 @@ class _VoiceProgressCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _CircularProgressBadge(),
+              _CircularProgressBadge(
+                currentCount: recordingCount,
+                targetCount: 20,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      '어머니의 목소리',
-                      style: TextStyle(
+                      '$name의 목소리',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: HomeScreen.darkText,
                       ),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     Text(
-                      '15개 더 모으면 페르소나 완성',
-                      style: TextStyle(fontSize: 12, color: HomeScreen.subText),
+                      '${20 - recordingCount}개 더 모으면 페르소나 완성',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: HomeScreen.subText,
+                      ),
                     ),
                   ],
                 ),
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE3AE),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Text(
+                  'PREMIUM',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFF9F1C),
+                  ),
+                ),
+              ),
             ],
           ),
+
           const SizedBox(height: 18),
+
           Container(
-            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF3D9),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFFDFA3)),
+              color: const Color(0xFFE8F8EF),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFC85C),
-                    borderRadius: BorderRadius.circular(12),
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFA982),
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.chat_bubble_outline_rounded,
+                    Icons.play_arrow_rounded,
                     color: Colors.white,
-                    size: 20,
+                    size: 30,
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text.rich(
                         TextSpan(
-                          text: 'Voice Persona란?\n',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF5C4630),
-                          ),
+                          children: [
+                            TextSpan(
+                              text: '최근 통화 · 6일 전',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF009F65),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' · 12:34',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: HomeScreen.subText,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
-                        TextSpan(
-                          text: '목소리를 다 모으면 사용할 수 있어요',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF8C7655),
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$name의 어린 시절 이야기',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: HomeScreen.darkText,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const Icon(
-                  Icons.lock_outline_rounded,
-                  size: 16,
-                  color: Color(0xFF8C7655),
+                  Icons.chevron_right_rounded,
+                  size: 26,
+                  color: Color(0xFF7C8273),
                 ),
               ],
             ),
@@ -307,31 +397,62 @@ class _VoiceProgressCard extends StatelessWidget {
 }
 
 class _CircularProgressBadge extends StatelessWidget {
-  const _CircularProgressBadge();
+  final int currentCount;
+  final int targetCount;
+
+  const _CircularProgressBadge({
+    required this.currentCount,
+    this.targetCount = 20,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final progress = targetCount == 0
+        ? 0.0
+        : (currentCount / targetCount).clamp(0.0, 1.0);
+
     return SizedBox(
-      width: 64,
-      height: 64,
+      width: 70,
+      height: 70,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          CircularProgressIndicator(
-            value: 0.25,
-            strokeWidth: 5,
-            backgroundColor: const Color(0xFFEFE7DC),
-            valueColor: const AlwaysStoppedAnimation(HomeScreen.primary),
-          ),
-          const Text(
-            '5\n/ 20',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              height: 1.0,
-              fontWeight: FontWeight.w700,
-              color: HomeScreen.darkText,
+          SizedBox(
+            width: 66,
+            height: 66,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 5,
+              strokeCap: StrokeCap.round,
+              backgroundColor: const Color(0xFFEFE7DC),
+              valueColor: const AlwaysStoppedAnimation(HomeScreen.primary),
             ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$currentCount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 25,
+                  height: 1.0,
+                  fontWeight: FontWeight.w500,
+                  color: HomeScreen.darkText,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '/ $targetCount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.0,
+                  fontWeight: FontWeight.w400,
+                  color: HomeScreen.subText,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -340,7 +461,9 @@ class _CircularProgressBadge extends StatelessWidget {
 }
 
 class _UploadButton extends StatelessWidget {
-  const _UploadButton();
+  final String name;
+
+  const _UploadButton({required this.name});
 
   @override
   Widget build(BuildContext context) {
@@ -350,9 +473,9 @@ class _UploadButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: () {},
         icon: const Icon(Icons.upload_rounded, size: 19),
-        label: const Text(
-          '어머니 통화 녹음 올리기',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        label: Text(
+          '$name 통화 녹음 올리기',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: HomeScreen.primary,
@@ -367,16 +490,18 @@ class _UploadButton extends StatelessWidget {
 }
 
 class _QuestionCard extends StatelessWidget {
-  const _QuestionCard();
+  final String name;
+
+  const _QuestionCard({required this.name});
 
   @override
   Widget build(BuildContext context) {
     final questions = [
-      ('결혼 전, 어머니의 스무 살은 어땠어요?', '젊은 시절 · 목소리 담기', true),
+      ('결혼 전, $name의 스무 살은 어땠어요?', '젊은 시절 · 목소리 담기', true),
       ('저를 키우며 가장 뿌듯했던 순간은요?', '나를 키우며 · 목소리 담기', true),
-      ('요즘 어머니의 하루는 어떻게 흘러가요?', '지금 · 목소리 담기', true),
-      ('어머니는 어릴 적 어떤 아이였나요?', '녹음 완료 · 다시 듣기', false),
-      ('어머니의 손맛, 그 비법을 들려주세요', '녹음 완료 · 다시 듣기', false),
+      ('요즘 $name의 하루는 어떻게 흘러가요?', '지금 · 목소리 담기', true),
+      ('$name는 어릴 적 어떤 아이였나요?', '녹음 완료 · 다시 듣기', false),
+      ('$name의 손맛, 그 비법을 들려주세요', '녹음 완료 · 다시 듣기', false),
     ];
 
     return Container(
@@ -424,6 +549,17 @@ class _QuestionCard extends StatelessWidget {
                   subtitle: item.$2,
                   active: item.$3,
                   showDivider: index != questions.length - 1,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => QuestionScreen(
+                          profileName: name,
+                          question: item.$1,
+                        ),
+                      ),
+                    );
+                  },
                 );
               }),
             ),
@@ -439,150 +575,84 @@ class _QuestionTile extends StatelessWidget {
   final String subtitle;
   final bool active;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   const _QuestionTile({
     required this.title,
     required this.subtitle,
     required this.active,
     required this.showDivider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: active ? HomeScreen.primary : const Color(0xFFEFECE6),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  active ? Icons.add : Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: active ? 24 : 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.35,
-                        fontWeight: FontWeight.w500,
-                        color: active
-                            ? HomeScreen.darkText
-                            : const Color(0xFFAAA69E),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: active
-                            ? const Color(0xFF009F65)
-                            : const Color(0xFF009F65),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 22,
-                color: active
-                    ? const Color(0xFF009F65)
-                    : const Color(0xFFD8D4CE),
-              ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          const Padding(
-            padding: EdgeInsets.only(left: 68, right: 16),
-            child: Divider(height: 1, color: Color(0xFFF0E7DC)),
-          ),
-      ],
-    );
-  }
-}
-
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 76,
-      padding: const EdgeInsets.only(top: 10),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEDE7DF))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(icon: Icons.home_outlined, label: '홈', selected: true),
-          _NavItem(
-            icon: Icons.inventory_2_outlined,
-            label: '기록',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-              );
-            },
-          ),
-          _NavItem(icon: Icons.chat_bubble_outline_rounded, label: 'AI'),
-          _NavItem(icon: Icons.person_outline_rounded, label: '마이'),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.selected = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? HomeScreen.primary : const Color(0xFFD3D3D3);
-
     return GestureDetector(
-      onTap: onTap,
+      onTap: active ? onTap : null,
       child: Column(
         children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? HomeScreen.primary
+                        : const Color(0xFFEFECE6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    active ? Icons.add : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: active ? 24 : 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                          color: active
+                              ? HomeScreen.darkText
+                              : const Color(0xFFAAA69E),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF009F65),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: active
+                      ? const Color(0xFF009F65)
+                      : const Color(0xFFD8D4CE),
+                ),
+              ],
             ),
           ),
+          if (showDivider)
+            const Padding(
+              padding: EdgeInsets.only(left: 68, right: 16),
+              child: Divider(height: 1, color: Color(0xFFF0E7DC)),
+            ),
         ],
       ),
     );

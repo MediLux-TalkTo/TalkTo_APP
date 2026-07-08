@@ -28,15 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await ApiClient.dio.get('/health');
 
-      await _authApi.login(
-        identifier: 'user@example.com',
-        password: 'Admin1234!',
-      );
+      await _authApi.login(identifier: 'test@talkto.app', password: 'test1234');
     } catch (e) {
       debugPrint('auto login failed: $e');
     }
 
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 

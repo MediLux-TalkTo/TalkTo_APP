@@ -63,7 +63,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const ConsentScreen()),
+        MaterialPageRoute(builder: (_) => ConsentScreen(profiles: _profiles)),
       );
     } catch (e) {
       if (!mounted) return;

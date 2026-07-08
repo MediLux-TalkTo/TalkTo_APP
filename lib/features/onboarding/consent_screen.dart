@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../home/home_screen.dart';
+import 'profile_setup_screen.dart';
 
 class ConsentScreen extends StatefulWidget {
-  const ConsentScreen({super.key});
+  final List<ProfileData> profiles;
+
+  const ConsentScreen({super.key, required this.profiles});
 
   @override
   State<ConsentScreen> createState() => _ConsentScreenState();
@@ -148,7 +151,8 @@ class _ConsentScreenState extends State<ConsentScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const HomeScreen(),
+                              builder: (_) =>
+                                  HomeScreen(profiles: widget.profiles),
                             ),
                           );
                         }
