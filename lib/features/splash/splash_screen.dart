@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import './onboarding_intro_screen.dart';
+import '../../core/network/api_client.dart';
+import '../auth/data/auth_api.dart';
+import '../onboarding/onboarding_intro_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,18 +15,32 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final AuthApi _authApi = AuthApi();
+
   @override
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
+    _bootstrap();
+  }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingIntroScreen()),
-      );
-    });
+  Future<void> _bootstrap() async {
+    try {
+      await ApiClient.dio.get('/health');
+
+      await _authApi.login(identifier: 'test@talkto.app', password: 'test1234');
+    } catch (e) {
+      debugPrint('auto login failed: $e');
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const OnboardingIntroScreen()),
+    );
   }
 
   @override

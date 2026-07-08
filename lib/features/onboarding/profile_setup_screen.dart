@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import './data/subject_api.dart';
 import 'consent_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -12,6 +13,9 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ProfileData> _profiles = [];
+  final SubjectApi _subjectApi = SubjectApi();
+
+  bool _isSubmitting = false;
 
   bool get _canContinue => _profiles.isNotEmpty;
 
@@ -29,6 +33,55 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _profiles.add(ProfileData(name: value));
       _controller.clear();
     });
+  }
+
+  String _toRelationship(String name) {
+    if (name.contains('어머니')) return 'mother';
+    if (name.contains('아버지')) return 'father';
+    if (name.contains('할머니')) return 'grandmother';
+    if (name.contains('할아버지')) return 'grandfather';
+    return 'family';
+  }
+
+  Future<void> _submitSubjects() async {
+    if (_profiles.isEmpty || _isSubmitting) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      for (final profile in _profiles) {
+        await _subjectApi.createSubject(
+          displayName: profile.name,
+          relationship: _toRelationship(profile.name),
+          lifeStatus: _toLifeStatus(profile.status),
+        );
+      }
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ConsentScreen(profiles: _profiles)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('프로필 저장에 실패했습니다. $e')));
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
+  }
+
+  String _toLifeStatus(ProfileStatus status) {
+    return status == ProfileStatus.alive ? 'LIVING' : 'DECEASED';
   }
 
   void _removeProfile(ProfileData profile) {
@@ -192,7 +245,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
               Expanded(
                 child: _profiles.isEmpty
-                    ? const _EmptyProfileBox()
+                    ? const Align(
+                        alignment: Alignment.topCenter,
+                        child: _EmptyProfileBox(),
+                      )
                     : ListView.separated(
                         padding: EdgeInsets.zero,
                         itemCount: _profiles.length,
@@ -217,15 +273,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _canContinue
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ConsentScreen(),
-                            ),
-                          );
-                        }
+                  onPressed: _canContinue && !_isSubmitting
+                      ? _submitSubjects
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF20D080),
@@ -300,7 +349,7 @@ class _ProfileCard extends StatelessWidget {
                   profile.name,
                   style: const TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: Color(0xFF222222),
                   ),
                 ),
@@ -317,7 +366,7 @@ class _ProfileCard extends StatelessWidget {
                   onPressed: onDelete,
                   icon: const Icon(
                     Icons.delete_outline,
-                    size: 20,
+                    size: 15,
                     color: Color(0xFF999999),
                   ),
                   padding: EdgeInsets.zero,
@@ -366,14 +415,14 @@ class _ProfileCard extends StatelessWidget {
             ),
             child: const Row(
               children: [
-                Icon(Icons.phone_outlined, size: 17, color: Color(0xFF009F65)),
+                Icon(Icons.phone_outlined, size: 13, color: Color(0xFF009F65)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '맞춤 질문을 추천해 통화를 녹음하도록 도와드려요',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: Color(0xFF009F65),
                     ),
                   ),
@@ -422,7 +471,7 @@ class _StatusButton extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: selected ? const Color(0xFF009F65) : const Color(0xFF999999),
           ),
         ),
@@ -436,27 +485,58 @@ class _EmptyProfileBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 75,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFDADADA),
-          style: BorderStyle.solid,
-        ),
-      ),
-      child: const Text(
-        '프로필을 추가해주세요',
-        style: TextStyle(
-          fontSize: 13,
-          color: Color(0xFF999999),
-          fontWeight: FontWeight.w400,
+    return CustomPaint(
+      painter: _DashedBorderPainter(),
+      child: Container(
+        width: double.infinity,
+        height: 75,
+        alignment: Alignment.center,
+        child: const Text(
+          '프로필을 추가해주세요',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF999999),
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const radius = 18.0;
+    const dashWidth = 5.0;
+    const dashGap = 4.0;
+
+    final paint = Paint()
+      ..color = const Color(0xFFDADADA)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    final rect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rect);
+    final metrics = path.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0;
+
+      while (distance < metric.length) {
+        final nextDistance = distance + dashWidth;
+        canvas.drawPath(metric.extractPath(distance, nextDistance), paint);
+        distance += dashWidth + dashGap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _PresetChip extends StatelessWidget {

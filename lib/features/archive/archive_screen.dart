@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/widgets/bottom_nav_bar.dart';
 import 'recording_detail_screen.dart';
 
 class ArchiveScreen extends StatelessWidget {
@@ -91,7 +92,7 @@ class ArchiveScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const _ArchiveBottomNavBar(),
+            const BottomNavBar(currentTab: BottomNavTab.archive),
           ],
         ),
       ),
@@ -351,67 +352,6 @@ class _RecordingTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ArchiveBottomNavBar extends StatelessWidget {
-  const _ArchiveBottomNavBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 76,
-      padding: const EdgeInsets.only(top: 10),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEDE7DF))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: const [
-          _NavItem(icon: Icons.home_outlined, label: '홈'),
-          _NavItem(
-            icon: Icons.inventory_2_outlined,
-            label: '기록',
-            selected: true,
-          ),
-          _NavItem(icon: Icons.chat_bubble_outline_rounded, label: 'AI'),
-          _NavItem(icon: Icons.person_outline_rounded, label: '마이'),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? ArchiveScreen.primary : const Color(0xFFD3D3D3);
-
-    return Column(
-      children: [
-        Icon(icon, size: 22, color: color),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

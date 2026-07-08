@@ -27,6 +27,7 @@ class RecordingDetailScreen extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
+
               const SizedBox(height: 28),
               Row(
                 children: [
