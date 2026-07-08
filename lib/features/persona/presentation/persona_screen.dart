@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/state/app_state.dart';
 import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../../onboarding/profile_setup_screen.dart';
 import 'widgets/persona_card.dart';
 
 class PersonaScreen extends StatefulWidget {
@@ -12,14 +14,24 @@ class PersonaScreen extends StatefulWidget {
 
 class _PersonaScreenState extends State<PersonaScreen> {
   int _selectedIndex = 0;
+  String _profileImageUrl(String name) {
+    if (name.contains('아버지') || name.contains('할아버지')) {
+      return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200';
+    }
 
-  final List<_PersonaTabData> _tabs = const [
-    _PersonaTabData(label: '어머니'),
-    _PersonaTabData(label: '아버지'),
-  ];
+    return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final profiles = AppState.safeProfiles;
+    if (_selectedIndex >= profiles.length) {
+      _selectedIndex = 0;
+    }
+
+    final selectedProfile = profiles[_selectedIndex];
+    final selectedName = selectedProfile.name;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFCF8),
       body: SafeArea(
@@ -57,7 +69,7 @@ class _PersonaScreenState extends State<PersonaScreen> {
                         ),
                         const SizedBox(height: 26),
                         _PersonaTabs(
-                          tabs: _tabs,
+                          profiles: profiles,
                           selectedIndex: _selectedIndex,
                           onChanged: (index) {
                             setState(() {
@@ -67,13 +79,9 @@ class _PersonaScreenState extends State<PersonaScreen> {
                         ),
                         const SizedBox(height: 16),
                         PersonaCard(
-                          name: _tabs[_selectedIndex].label,
-                          imageUrl: _selectedIndex == 0
-                              ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200'
-                              : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
-                          learningText: _selectedIndex == 0
-                              ? '말투 학습 87% · 녹음 12개'
-                              : '말투 학습 64% · 녹음 8개',
+                          name: selectedName,
+                          imageUrl: _profileImageUrl(selectedName),
+                          learningText: '말투 학습 87% · 녹음 12개',
                         ),
                       ],
                     ),
@@ -87,12 +95,6 @@ class _PersonaScreenState extends State<PersonaScreen> {
       ),
     );
   }
-}
-
-class _PersonaTabData {
-  final String label;
-
-  const _PersonaTabData({required this.label});
 }
 
 class _PremiumBadge extends StatelessWidget {
@@ -122,12 +124,12 @@ class _PremiumBadge extends StatelessWidget {
 }
 
 class _PersonaTabs extends StatelessWidget {
-  final List<_PersonaTabData> tabs;
+  final List<ProfileData> profiles;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
 
   const _PersonaTabs({
-    required this.tabs,
+    required this.profiles,
     required this.selectedIndex,
     required this.onChanged,
   });
@@ -135,11 +137,12 @@ class _PersonaTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(tabs.length, (index) {
+      children: List.generate(profiles.length, (index) {
         final selected = selectedIndex == index;
+        final label = profiles[index].name;
 
         return Padding(
-          padding: EdgeInsets.only(right: index == tabs.length - 1 ? 0 : 8),
+          padding: EdgeInsets.only(right: index == profiles.length - 1 ? 0 : 8),
           child: GestureDetector(
             onTap: () => onChanged(index),
             child: AnimatedContainer(
@@ -157,7 +160,7 @@ class _PersonaTabs extends StatelessWidget {
                 ),
               ),
               child: Text(
-                tabs[index].label,
+                label,
                 style: TextStyle(
                   color: selected ? Colors.white : const Color(0xFF9A9A9A),
                   fontSize: 14,

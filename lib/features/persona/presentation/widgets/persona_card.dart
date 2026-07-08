@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../persona_chat_screen.dart';
+
 class PersonaCard extends StatefulWidget {
   final String name;
   final String imageUrl;
@@ -91,7 +93,18 @@ class _PersonaCardState extends State<PersonaCard>
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PersonaChatScreen(
+                        name: widget.name,
+                        imageUrl: widget.imageUrl,
+                        learningText: widget.learningText,
+                      ),
+                    ),
+                  );
+                },
                 child: const Text(
                   "보이스 페르소나와 대화하기",
                   style: TextStyle(
