@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/state/app_state.dart';
 import '../home/home_screen.dart';
 import 'profile_setup_screen.dart';
 
@@ -148,11 +149,13 @@ class _ConsentScreenState extends State<ConsentScreen> {
                 child: ElevatedButton(
                   onPressed: canContinue
                       ? () {
+                          AppState.setProfiles(widget.profiles);
+
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  HomeScreen(profiles: widget.profiles),
+                                  HomeScreen(profiles: AppState.safeProfiles),
                             ),
                           );
                         }

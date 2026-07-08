@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
 
+import '../../core/state/app_state.dart';
 import '../../features/archive/archive_screen.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/onboarding/profile_setup_screen.dart';
 import '../../features/persona/presentation/persona_screen.dart';
 
 enum BottomNavTab { home, archive, persona, my }
 
 class BottomNavBar extends StatelessWidget {
   final BottomNavTab currentTab;
-  final List<ProfileData> profiles;
 
-  const BottomNavBar({
-    super.key,
-    required this.currentTab,
-    this.profiles = const [],
-  });
+  const BottomNavBar({super.key, required this.currentTab});
 
   static const Color primary = Color(0xFF22CC7A);
   static const Color inactive = Color(0xFFD3D3D3);
 
+  void _goToRoot(BuildContext context, Widget screen) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final safeProfiles = profiles.isNotEmpty
-        ? profiles
-        : const [ProfileData(name: '어머니')];
+    final profiles = AppState.safeProfiles;
 
     return Container(
       height: 76,
@@ -41,14 +42,7 @@ class BottomNavBar extends StatelessWidget {
             label: '홈',
             selected: currentTab == BottomNavTab.home,
             onTap: () {
-              if (currentTab == BottomNavTab.home) return;
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => HomeScreen(profiles: safeProfiles),
-                ),
-              );
+              _goToRoot(context, HomeScreen(profiles: profiles));
             },
           ),
           _BottomNavItem(
@@ -56,12 +50,7 @@ class BottomNavBar extends StatelessWidget {
             label: '기록',
             selected: currentTab == BottomNavTab.archive,
             onTap: () {
-              if (currentTab == BottomNavTab.archive) return;
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-              );
+              _goToRoot(context, const ArchiveScreen());
             },
           ),
           _BottomNavItem(
@@ -69,19 +58,16 @@ class BottomNavBar extends StatelessWidget {
             label: 'AI',
             selected: currentTab == BottomNavTab.persona,
             onTap: () {
-              if (currentTab == BottomNavTab.persona) return;
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const PersonaScreen()),
-              );
+              _goToRoot(context, const PersonaScreen());
             },
           ),
           _BottomNavItem(
             icon: Icons.person_outline_rounded,
             label: '마이',
             selected: currentTab == BottomNavTab.my,
-            onTap: () {},
+            onTap: () {
+              // TODO: MyPage 초기 화면 연결
+            },
           ),
         ],
       ),

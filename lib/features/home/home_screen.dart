@@ -19,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool get isSelectedProfileAlive =>
+      selectedProfile.status == ProfileStatus.alive;
   int _selectedProfileIndex = 0;
 
   ProfileData get selectedProfile => widget.profiles[_selectedProfileIndex];
@@ -77,19 +79,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         _VoiceProgressCard(
                           name: selectedName,
                           recordingCount: 5,
+                          isAlive: isSelectedProfileAlive,
                         ),
                         const SizedBox(height: 14),
                         _UploadButton(name: selectedName),
                         const SizedBox(height: 18),
-                        _QuestionCard(name: selectedName),
+
+                        if (isSelectedProfileAlive)
+                          _QuestionCard(name: selectedName)
+                        else
+                          _PassedAwayHomeSection(name: selectedName),
                       ],
                     ),
                   ),
                 ),
-                BottomNavBar(
-                  currentTab: BottomNavTab.home,
-                  profiles: widget.profiles,
-                ),
+                BottomNavBar(currentTab: BottomNavTab.home),
               ],
             ),
           ],
@@ -248,8 +252,13 @@ class _AddProfileButton extends StatelessWidget {
 class _VoiceProgressCard extends StatelessWidget {
   final String name;
   final int recordingCount;
+  final bool isAlive;
 
-  const _VoiceProgressCard({required this.name, required this.recordingCount});
+  const _VoiceProgressCard({
+    required this.name,
+    required this.recordingCount,
+    required this.isAlive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -320,76 +329,7 @@ class _VoiceProgressCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 18),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F8EF),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFA982),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '최근 통화 · 6일 전',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF009F65),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' · 12:34',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: HomeScreen.subText,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$name의 어린 시절 이야기',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: HomeScreen.darkText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 26,
-                  color: Color(0xFF7C8273),
-                ),
-              ],
-            ),
-          ),
+          _RecentRecordingBox(name: name, isAlive: isAlive),
         ],
       ),
     );
@@ -653,6 +593,260 @@ class _QuestionTile extends StatelessWidget {
               padding: EdgeInsets.only(left: 68, right: 16),
               child: Divider(height: 1, color: Color(0xFFF0E7DC)),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PassedAwayHomeSection extends StatelessWidget {
+  final String name;
+
+  const _PassedAwayHomeSection({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFCF8),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFF1E7DA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '오늘 다시 들어보면\n좋은 $name의 목소리',
+                style: const TextStyle(
+                  fontSize: 18,
+                  height: 1.4,
+                  fontWeight: FontWeight.w700,
+                  color: HomeScreen.darkText,
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                '↻ 다른 기억',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF009F65),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFF1E7DA)),
+            ),
+            child: Column(
+              children: [
+                _MemoryVoiceTile(
+                  title: '2026. 10. 2. 녹음',
+                  subtitle: '9일 전 담음 · 08:12',
+                ),
+                const Divider(height: 24, color: Color(0xFFF0E7DC)),
+                _MemoryVoiceTile(
+                  title: '2024. 03. 05. 녹음',
+                  subtitle: '2일 전 담음 · 05:30',
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F8EF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFCBEFDC)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Color(0xFFD6F7E6),
+                  child: Icon(
+                    Icons.upload_rounded,
+                    color: Color(0xFF009F65),
+                    size: 22,
+                  ),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '아직 담지 못한 목소리가 있다면\n',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: HomeScreen.darkText,
+                          ),
+                        ),
+                        TextSpan(
+                          text:
+                              '오래된 통화나 영상 어딘가 남아있을 목소리를 올려두면, 차곡차곡 모여 언젠가 Voice Persona로 다시 만날 수 있어요.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.6,
+                            color: HomeScreen.subText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemoryVoiceTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _MemoryVoiceTile({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFA982),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.play_arrow_rounded,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$title\n',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: HomeScreen.darkText,
+                  ),
+                ),
+                TextSpan(
+                  text: subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: HomeScreen.subText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentRecordingBox extends StatelessWidget {
+  final String name;
+  final bool isAlive;
+
+  const _RecentRecordingBox({required this.name, required this.isAlive});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = isAlive ? '최근 통화' : '최근 업로드';
+    final title = '$name의 어린 시절 이야기';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F8EF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFA982),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$label · 6일 전',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF009F65),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' · 12:34',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: HomeScreen.subText,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: HomeScreen.darkText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 26,
+            color: Color(0xFF7C8273),
+          ),
         ],
       ),
     );
