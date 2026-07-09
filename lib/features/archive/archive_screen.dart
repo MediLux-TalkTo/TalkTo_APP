@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/bottom_nav_bar.dart';
+import '../home/data/subject_api.dart';
+import '../recordings/data/recording_api.dart';
 import 'recording_detail_screen.dart';
 
-class ArchiveScreen extends StatelessWidget {
+class ArchiveScreen extends StatefulWidget {
   const ArchiveScreen({super.key});
 
   static const Color primary = Color(0xFF22CC7A);
@@ -11,37 +13,104 @@ class ArchiveScreen extends StatelessWidget {
   static const Color darkText = Color(0xFF222222);
 
   @override
+  State<ArchiveScreen> createState() => _ArchiveScreenState();
+}
+
+class _ArchiveScreenState extends State<ArchiveScreen> {
+  final SubjectApi _subjectApi = SubjectApi();
+  final RecordingApi _recordingApi = RecordingApi();
+
+  List<Subject> _subjects = [];
+  List<Recording> _recordings = [];
+
+  int _selectedSubjectIndex = 0;
+  bool _isLoading = true;
+  bool _isRecordingsLoading = false;
+  String? _errorMessage;
+
+  Subject get selectedSubject => _subjects[_selectedSubjectIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final subjects = await _subjectApi.getSubjects();
+
+      if (!mounted) return;
+
+      setState(() {
+        _subjects = subjects;
+        _selectedSubjectIndex = 0;
+        _isLoading = false;
+      });
+
+      if (subjects.isNotEmpty) {
+        await _loadRecordings(subjects.first.id);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = '보관함을 불러오지 못했습니다.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadRecordings(String subjectId) async {
+    setState(() {
+      _isRecordingsLoading = true;
+    });
+
+    try {
+      final recordings = await _recordingApi.getRecordings(subjectId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _recordings = recordings;
+        _isRecordingsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _recordings = [];
+        _isRecordingsLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final records = [
-      RecordingItem(
-        title: '아버지와 저녁 통화',
-        person: '아버지',
-        date: '6월 12일',
-        duration: '05:30',
-        tag: '# 일상',
-      ),
-      RecordingItem(
-        title: '어머니의 어린 시절 이야기',
-        person: '어머니',
-        date: '6월 8일',
-        duration: '12:34',
-        tag: '# 어린 시절',
-      ),
-      RecordingItem(
-        title: '아버지의 청춘 이야기',
-        person: '아버지',
-        date: '6월 5일',
-        duration: '08:12',
-        tag: '# 청춘',
-      ),
-      RecordingItem(
-        title: '주말 안부 통화',
-        person: '어머니',
-        date: '6월 1일',
-        duration: '21:08',
-        tag: '# 안부',
-      ),
-    ];
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFFFCF8),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFFFCF8),
+        body: Center(child: Text(_errorMessage!)),
+        bottomNavigationBar: const BottomNavBar(
+          currentTab: BottomNavTab.archive,
+        ),
+      );
+    }
+
+    if (_subjects.isEmpty) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFFFCF8),
+        body: Center(child: Text('등록된 대상자가 없습니다.')),
+        bottomNavigationBar: BottomNavBar(currentTab: BottomNavTab.archive),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFCF8),
@@ -59,7 +128,7 @@ class ArchiveScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: darkText,
+                        color: ArchiveScreen.darkText,
                       ),
                     ),
                     const SizedBox(height: 22),
@@ -67,27 +136,68 @@ class ArchiveScreen extends StatelessWidget {
                     const SizedBox(height: 14),
                     const _AiSearchBox(),
                     const SizedBox(height: 20),
-                    const _FilterChips(),
+                    _SubjectChips(
+                      subjects: _subjects,
+                      selectedIndex: _selectedSubjectIndex,
+                      onSelected: (index) async {
+                        setState(() {
+                          _selectedSubjectIndex = index;
+                          _recordings = [];
+                        });
+
+                        await _loadRecordings(_subjects[index].id);
+                      },
+                    ),
                     const SizedBox(height: 26),
-                    const _MonthSelector(),
+                    _MonthSelector(recordingCount: _recordings.length),
                     const SizedBox(height: 24),
-                    ...records.map(
-                      (record) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _RecordingTile(
-                          record: record,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    RecordingDetailScreen(record: record),
-                              ),
-                            );
-                          },
+
+                    if (_isRecordingsLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_recordings.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 40),
+                          child: Text(
+                            '아직 업로드된 녹음이 없어요.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: ArchiveScreen.subText,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ..._recordings.map(
+                        (recording) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _RecordingTile(
+                            recording: recording,
+                            personName: selectedSubject.displayName,
+                            onTap: () {
+                              final item = RecordingItem(
+                                title: recording.originalFilename.isNotEmpty
+                                    ? recording.originalFilename
+                                    : '${selectedSubject.displayName}의 녹음',
+                                person: selectedSubject.displayName,
+                                date: _formatDate(recording.createdAt),
+                                duration: _formatDuration(
+                                  recording.durationSeconds,
+                                ),
+                                tag: '# 녹음',
+                              );
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      RecordingDetailScreen(record: item),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -97,6 +207,24 @@ class ArchiveScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(String value) {
+    if (value.isEmpty) return '-';
+
+    final date = DateTime.tryParse(value);
+    if (date == null) return '-';
+
+    return '${date.month}월 ${date.day}일';
+  }
+
+  String _formatDuration(int? seconds) {
+    if (seconds == null || seconds <= 0) return '--:--';
+
+    final minutes = seconds ~/ 60;
+    final remainSeconds = seconds % 60;
+
+    return '${minutes.toString().padLeft(2, '0')}:${remainSeconds.toString().padLeft(2, '0')}';
   }
 }
 
@@ -196,19 +324,40 @@ class _AiSearchBox extends StatelessWidget {
   }
 }
 
-class _FilterChips extends StatelessWidget {
-  const _FilterChips();
+class _SubjectChips extends StatelessWidget {
+  final List<Subject> subjects;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  const _SubjectChips({
+    required this.subjects,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: const [
-        _FilterChip(label: '전체', selected: true),
-        SizedBox(width: 10),
-        _FilterChip(label: '어머니'),
-        SizedBox(width: 10),
-        _FilterChip(label: '아버지'),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(subjects.length, (index) {
+          final subject = subjects[index];
+          final selected = selectedIndex == index;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              right: index == subjects.length - 1 ? 0 : 10,
+            ),
+            child: GestureDetector(
+              onTap: () => onSelected(index),
+              child: _FilterChip(
+                label: subject.displayName,
+                selected: selected,
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }
@@ -245,28 +394,33 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _MonthSelector extends StatelessWidget {
-  const _MonthSelector();
+  final int recordingCount;
+
+  const _MonthSelector({required this.recordingCount});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         _SquareIconButton(icon: Icons.chevron_left_rounded, onTap: () {}),
-        const Expanded(
+        Expanded(
           child: Column(
             children: [
-              Text(
-                '2026년 6월',
+              const Text(
+                '2026년 7월',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: ArchiveScreen.darkText,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                '녹음 4개',
-                style: TextStyle(fontSize: 12, color: ArchiveScreen.subText),
+                '녹음 $recordingCount개',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: ArchiveScreen.subText,
+                ),
               ),
             ],
           ),
@@ -285,27 +439,39 @@ class _SquareIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9E3DA)),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE9E3DA)),
+        ),
+        child: Icon(icon, size: 24, color: const Color(0xFF222222)),
       ),
-      child: Icon(icon, size: 24, color: const Color(0xFF222222)),
     );
   }
 }
 
 class _RecordingTile extends StatelessWidget {
-  final RecordingItem record;
+  final Recording recording;
+  final String personName;
   final VoidCallback onTap;
 
-  const _RecordingTile({required this.record, required this.onTap});
+  const _RecordingTile({
+    required this.recording,
+    required this.personName,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final title = recording.originalFilename.isNotEmpty
+        ? recording.originalFilename
+        : '$personName의 녹음';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -329,7 +495,7 @@ class _RecordingTile extends StatelessWidget {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '${record.title}\n',
+                      text: '$title\n',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -337,8 +503,7 @@ class _RecordingTile extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text:
-                          '${record.person} · ${record.date} · ${record.duration}',
+                      text: '$personName · ${recording.uploadStatus}',
                       style: const TextStyle(
                         fontSize: 13,
                         color: ArchiveScreen.subText,
