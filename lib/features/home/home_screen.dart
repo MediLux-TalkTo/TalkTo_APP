@@ -1,14 +1,16 @@
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../shared/widgets/bottom_nav_bar.dart';
-import '../onboarding/profile_setup_screen.dart';
+import '../onboarding/data/consent_api.dart';
 import '../question/question_screen.dart';
+import '../recordings/data/recording_api.dart';
+import '../recordings/services/recording_upload_service.dart';
+import 'data/subject_api.dart';
 
 class HomeScreen extends StatefulWidget {
-  final List<ProfileData> profiles;
-
-  const HomeScreen({super.key, required this.profiles});
+  const HomeScreen({super.key});
 
   static const Color primary = Color(0xFF22CC7A);
   static const Color subText = Color(0xFF7C8273);
@@ -19,15 +21,168 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool get isSelectedProfileAlive =>
-      selectedProfile.status == ProfileStatus.alive;
+  final ConsentApi _consentApi = ConsentApi();
+  final SubjectApi _subjectApi = SubjectApi();
+  final RecordingApi _recordingApi = RecordingApi();
+  final RecordingUploadService _uploadService = RecordingUploadService();
+
+  bool _isUploading = false;
+
+  List<Subject> _subjects = [];
+  bool _isLoading = true;
+  String? _errorMessage;
   int _selectedProfileIndex = 0;
 
-  ProfileData get selectedProfile => widget.profiles[_selectedProfileIndex];
+  List<Recording> _recordings = [];
+
+  int get recordingCount => _recordings.length;
+
+  Subject get selectedSubject => _subjects[_selectedProfileIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final subjects = await _subjectApi.getSubjects();
+
+      if (!mounted) return;
+
+      setState(() {
+        _subjects = subjects;
+        _selectedProfileIndex = 0;
+        _isLoading = false;
+      });
+
+      if (subjects.isNotEmpty) {
+        await _loadRecordings(subjects.first.id);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = '대상자를 불러오지 못했습니다.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final subjects = await _subjectApi.getSubjects();
+
+      setState(() {
+        _subjects = subjects;
+        _selectedProfileIndex = 0;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '대상자를 불러오지 못했습니다.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadRecordings(String subjectId) async {
+    final recordings = await _recordingApi.getRecordings(subjectId);
+
+    setState(() {
+      _recordings = recordings;
+    });
+  }
+
+  Future<void> _uploadRecording() async {
+    try {
+      final result = await fp.FilePicker.pickFiles(
+        type: fp.FileType.audio,
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result == null) return;
+
+      final file = result.files.first;
+
+      final mimeType = _uploadService.detectMimeType(file);
+
+      setState(() {
+        _isUploading = true;
+      });
+
+      await _consentApi.acceptUploadConsents(subjectId: selectedSubject.id);
+
+      final uploadIntent = await _recordingApi.createUploadIntent(
+        subjectId: selectedSubject.id,
+        originalFilename: file.name,
+        mimeType: mimeType,
+        fileSizeBytes: file.size,
+        durationSeconds: null,
+        memo: '',
+        conversationPartnerName: '',
+        relatedQuestionId: '',
+        relatedQuestionText: '',
+        fileHash: '',
+        source: 'app_recording',
+        platform: _uploadService.getPlatformName(),
+        singleFile: true,
+      );
+
+      await _uploadService.uploadToPresignedUrl(
+        uploadUrl: uploadIntent.uploadUrl,
+        file: file,
+        mimeType: mimeType,
+      );
+
+      await _recordingApi.completeUpload(
+        recordingId: uploadIntent.recording.id,
+        uploadIntentId: uploadIntent.uploadIntentId,
+      );
+
+      await _loadRecordings(selectedSubject.id);
+
+      await _loadSubjects();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('업로드가 완료되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('업로드 실패\n$e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final selectedName = selectedProfile.name;
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(body: Center(child: Text(_errorMessage!)));
+    }
+
+    if (_subjects.isEmpty) {
+      return const Scaffold(body: Center(child: Text('등록된 대상자가 없습니다.')));
+    }
+
+    final currentSubject = selectedSubject;
+    final selectedName = selectedSubject.displayName;
+    final isAlive = selectedSubject.isAlive;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FFF5),
@@ -67,25 +222,32 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 22),
                         _ProfileSelector(
-                          profiles: widget.profiles,
+                          subjects: _subjects,
                           selectedIndex: _selectedProfileIndex,
-                          onSelected: (index) {
+                          onSelected: (index) async {
                             setState(() {
                               _selectedProfileIndex = index;
+                              _recordings = [];
                             });
+
+                            await _loadRecordings(_subjects[index].id);
                           },
                         ),
                         const SizedBox(height: 18),
                         _VoiceProgressCard(
                           name: selectedName,
-                          recordingCount: 5,
-                          isAlive: isSelectedProfileAlive,
+                          recordingCount: recordingCount,
+                          isAlive: isAlive,
                         ),
                         const SizedBox(height: 14),
-                        _UploadButton(name: selectedName),
+                        _UploadButton(
+                          name: selectedName,
+                          enabled: !_isUploading,
+                          onUpload: _uploadRecording,
+                        ),
                         const SizedBox(height: 18),
 
-                        if (isSelectedProfileAlive)
+                        if (isAlive)
                           _QuestionCard(name: selectedName)
                         else
                           _PassedAwayHomeSection(name: selectedName),
@@ -130,12 +292,12 @@ class _TopHeader extends StatelessWidget {
 }
 
 class _ProfileSelector extends StatelessWidget {
-  final List<ProfileData> profiles;
+  final List<Subject> subjects;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
   const _ProfileSelector({
-    required this.profiles,
+    required this.subjects,
     required this.selectedIndex,
     required this.onSelected,
   });
@@ -144,17 +306,17 @@ class _ProfileSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ...List.generate(profiles.length, (index) {
-          final profile = profiles[index];
+        ...List.generate(subjects.length, (index) {
+          final subject = subjects[index];
 
           return Padding(
             padding: const EdgeInsets.only(right: 18),
             child: GestureDetector(
               onTap: () => onSelected(index),
               child: _ProfileAvatar(
-                name: profile.name,
+                name: subject.displayName,
                 selected: selectedIndex == index,
-                imageUrl: _profileImageUrl(profile.name),
+                imageUrl: _profileImageUrl(subject.displayName),
               ),
             ),
           );
@@ -168,7 +330,6 @@ class _ProfileSelector extends StatelessWidget {
     if (name.contains('아버지') || name.contains('할아버지')) {
       return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200';
     }
-
     return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200';
   }
 }
@@ -262,6 +423,8 @@ class _VoiceProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final remainingCount = (20 - recordingCount).clamp(0, 20);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
@@ -298,7 +461,9 @@ class _VoiceProgressCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      '${20 - recordingCount}개 더 모으면 페르소나 완성',
+                      remainingCount == 0
+                          ? '페르소나 완성 조건을 충족했어요'
+                          : '$remainingCount개 더 모으면 페르소나 완성',
                       style: const TextStyle(
                         fontSize: 12,
                         color: HomeScreen.subText,
@@ -402,8 +567,14 @@ class _CircularProgressBadge extends StatelessWidget {
 
 class _UploadButton extends StatelessWidget {
   final String name;
+  final VoidCallback onUpload;
+  final bool enabled;
 
-  const _UploadButton({required this.name});
+  const _UploadButton({
+    required this.name,
+    required this.onUpload,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -411,7 +582,7 @@ class _UploadButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
-        onPressed: () {},
+        onPressed: enabled ? onUpload : null,
         icon: const Icon(Icons.upload_rounded, size: 19),
         label: Text(
           '$name 통화 녹음 올리기',

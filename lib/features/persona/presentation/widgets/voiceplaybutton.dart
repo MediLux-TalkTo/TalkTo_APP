@@ -2,7 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 class VoicePlayButton extends StatefulWidget {
-  final String voiceUrl;
+  final String? voiceUrl;
   final String label;
 
   const VoicePlayButton({
@@ -20,6 +20,13 @@ class _VoicePlayButtonState extends State<VoicePlayButton> {
   bool _isPlaying = false;
 
   Future<void> _play() async {
+    if (widget.voiceUrl == null || widget.voiceUrl!.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('아직 음성 파일이 없어요.')));
+      return;
+    }
+
     if (_isPlaying) {
       await _player.stop();
       setState(() => _isPlaying = false);
@@ -27,12 +34,7 @@ class _VoicePlayButtonState extends State<VoicePlayButton> {
     }
 
     setState(() => _isPlaying = true);
-
-    await _player.play(UrlSource(widget.voiceUrl));
-
-    _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _isPlaying = false);
-    });
+    await _player.play(UrlSource(widget.voiceUrl!));
   }
 
   @override

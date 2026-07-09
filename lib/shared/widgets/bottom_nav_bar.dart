@@ -42,7 +42,7 @@ class BottomNavBar extends StatelessWidget {
             label: '홈',
             selected: currentTab == BottomNavTab.home,
             onTap: () {
-              _goToRoot(context, HomeScreen(profiles: profiles));
+              _goToRoot(context, const HomeScreen());
             },
           ),
           _BottomNavItem(
