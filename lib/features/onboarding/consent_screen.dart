@@ -154,8 +154,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  HomeScreen(profiles: AppState.safeProfiles),
+                              builder: (_) => const HomeScreen(),
                             ),
                           );
                         }

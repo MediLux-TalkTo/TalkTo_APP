@@ -7,16 +7,9 @@ class ApiClient {
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 90),
       sendTimeout: const Duration(seconds: 60),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     ),
-  )..interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-      ),
-    );
+  )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 
   static void setToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';

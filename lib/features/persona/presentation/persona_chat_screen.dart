@@ -164,11 +164,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                                 : CrossAxisAlignment.start,
                             children: [
                               _MessageBubble(message: message),
-                              if (!message.isMe &&
-                                  message.audioUrl != null &&
-                                  message.audioUrl!.isNotEmpty)
+                              if (!message.isMe)
                                 VoicePlayButton(
-                                  voiceUrl: message.audioUrl!,
+                                  voiceUrl: message.audioUrl,
                                   label: '${widget.name} 목소리로 듣기',
                                 ),
                             ],
